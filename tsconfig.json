@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": "build",
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "declaration": true,
+        "declarationMap": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noEmitOnError": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "pretty": true,
+        "sourceMap": true,
+        "strict": true,
+        "strictNullChecks": true,
+        "target": "es2017",
+        "incremental": true,
+        "newLine": "LF",
+        "resolveJsonModule": true,
+        "inlineSources": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "./package.json",
+        "./CHANGELOG.md",
+        "./RELEASE_NOTES.md"
+    ],
+    "exclude": [
+        "node_modules"
+      ]
+}
