@@ -1,16 +1,13 @@
-const fetch = require('node-fetch');
 import {Mutex, MutexInterface} from 'async-mutex';
-var crypto = require('crypto');
 var hash = require('object-hash');
-import { gzip } from 'node-gzip';
+import makeRequest from '../../utils/MakeRequest'
 
 export class Metrics{
     public company:string;
     public accessID:string;
     public accessKey:string;
-    private readonly PATH = "/v2/metric/ingest";
-    private readonly METHOD = "POST";
-    private readonly metricIngestUrl: string;
+    private readonly resourcePath = "/v2/metric/ingest";
+    private readonly url: string;
     private readonly batch: boolean;
     private readonly interval: number;
     private readonly mutex:MutexInterface;
@@ -23,7 +20,7 @@ export class Metrics{
         this.company = process.env.LM_COMPANY!;
         this.accessID = process.env.LM_ACCESS_ID!;
         this.accessKey = process.env.LM_ACCESS_KEY!;
-        this.metricIngestUrl = `https://${this.company}.logicmonitor.com/rest/v2/metric/ingest`;
+        this.url = `https://${this.company}.logicmonitor.com/rest`;
 
         // if batch is true interval should not be 0
         if(batch && interval == 0) {
@@ -119,23 +116,10 @@ export class Metrics{
             body = JSON.stringify(localMetricBatch);
             this.metricBatch = [];
         }
-
-
-        let lmV1Token = this.getLmV1Token(body);
-        console.log("LMV1 Token: " + lmV1Token);
         console.log("Body: ", body)
-        const compressedBody = await gzip(body);
-        //console.log("Compressed body: ", compressedBody.toString)
-        const response = await fetch(this.metricIngestUrl, {
-            method: this.METHOD,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': lmV1Token,
-                'Content-Encoding': 'gzip',
-            },
-            body: compressedBody
-        });
-        // 'Content-Encoding': 'gzip',
+        
+
+        const response = await makeRequest('POST', this.url, this.resourcePath, body, this.accessID, this.accessKey);
         console.log("Response: ", await response.json())
 
 
@@ -301,22 +285,6 @@ export class Metrics{
         
         }
         return metricPayload;
-    }
-    private getLmV1Token(body: string) {
-
-        // let timeStamp = Math.floor(Date.now()/1000).toString();
-        let timeStamp = Date.now();
-        const method = this.METHOD;
-        const resourcePath = this.PATH;
-        let hmac = crypto.createHmac('sha256', this.accessKey);
-        console.log("Access Key: ", this.accessKey)
-        console.log("Input to HMAC: ", method + timeStamp + body + resourcePath)
-        hmac.update(method + timeStamp + body + resourcePath);
-        let hexString = hmac.digest('hex');
-        let buffer = Buffer.from(hexString, 'utf8');
-        let signature = buffer.toString('base64');
-
-        return 'LMv1 ' + this.accessID + ':' + signature + ':' + timeStamp;
     }
 
 
