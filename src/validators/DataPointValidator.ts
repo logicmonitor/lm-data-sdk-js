@@ -5,8 +5,7 @@ const REGEX_DATA_POINT = /^[a-zA-Z_0-9]+$/
 export async function validateDataPoint(dp: any) {
 
     let errMsg = "";
-
-    if(dp){
+    if(dp !== undefined){
         errMsg += checkDataPointNameValidation(dp.dataPointName);
 
         if (dp.dataPointDescription && dp.dataPointDescription != '') {
@@ -24,9 +23,6 @@ export async function validateDataPoint(dp: any) {
         errMsg += 'DataPoint must be defined. ';
     }
 
-
-
-
     return errMsg;
 }
 
@@ -35,7 +31,7 @@ function checkDataPointNameValidation(dataPointName: string): string {
     let errMsg = "";
 
     if (dataPointName == "" || dataPointName == undefined) {
-        errMsg += 'DataPoint name is mandatory '
+        errMsg += 'DataPoint must be defined. '
     } else {
         if (passEmptyAndSpellCheck(dataPointName)) {
             errMsg += 'Datapoint Name Should not be empty or have tailing spaces. '
@@ -51,7 +47,7 @@ function checkDataPointNameValidation(dataPointName: string): string {
 
 function validateDpName(name: string): string {
     let errorDpMsg = "";
-	let invalidDataPointNameSet = [
+	const invalidDataPointNameSet = [
 		"SIN",
 		"COS",
 		"LOG",
@@ -108,7 +104,7 @@ function validateDpName(name: string): string {
     ];
 
     if(!(REGEX_DATA_POINT.test(name))) {
-        errorDpMsg += 'Invalid Datapoint name ' + name + ' ';
+        errorDpMsg += 'Invalid Datapoint name \'' + name + '\' ';
     }
 
     let flag = false;
@@ -120,7 +116,7 @@ function validateDpName(name: string): string {
     });
 
     if(flag) {
-        errorDpMsg += name + ' is a keyword and cannot be used as datapoint name.'
+        errorDpMsg += name + ' is a keyword and cannot be used as datapoint name. '
     }
 
     return errorDpMsg;
@@ -140,7 +136,7 @@ function checkDataPointAggregationTypeValidation(agrType: string): string {
     let errorDpMsg = '';
 
     let flag = false;
-    let validAggregationDatapointType  = ["none", "avg", "sum", "percentile"];
+    const validAggregationDatapointType  = ["none", "avg", "sum", "percentile"];
 
     validAggregationDatapointType.forEach(element => {
         if(agrType.toLowerCase() === element) {
@@ -158,7 +154,7 @@ function checkDataPointAggregationTypeValidation(agrType: string): string {
 function checkDataPointTypeValidation(dpType: string): string {
     let errorDpMsg = '';
     let flag = false;
-    let validDatapointType = ["gauge", "counter", "derive"];
+    const validDatapointType = ["gauge", "counter", "derive"];
 
     validDatapointType.forEach(element => {
         if(dpType.toLowerCase() === element) {
