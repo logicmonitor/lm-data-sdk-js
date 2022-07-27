@@ -1,31 +1,31 @@
 import {
-    isValidId9Digit,
+    isValidId10Digit,
     isValidIdExpo,
     passEmptyAndSpellCheck,
     standardChecks
 } from './Validator'
 
-const REGEX_INSTANCE_NAME = /^[a-z:A-Z0-9\\._\\-]+$/;
-const REGEX_INVALID_DEVICE_DISPLAY_NAME = /[*<?,;`\\n]/;
+const REGEX_INSTANCE_NAME = /^[a-z:A-Z0-9\._\-]+$/;
+const REGEX_INVALID_DEVICE_DISPLAY_NAME = /[*<?,;`\\\n]/;
 
 export async function validateInstance(instance: any) {
     let errorMsg = '';
 
-    if(instance){
+    if(instance !== undefined){
         let insId = instance.instanceId;
         let insName = instance.instanceName;
 
-        if(insId) {
+        if(insId !== undefined) {
             if(insId > 0) {
                 errorMsg += checkInstanceId(insId)
             } else {
-                errorMsg += 'Instance Id ' + insId + ' should not be negative. ';
+                errorMsg += 'Instance Id ' + insId + ' should not be negative or zero. ';
             }
-        } else if(!insName || insName ===''){
+        } else if(insName === undefined || insName ===''){
             errorMsg += 'Either Instance Id or Instance Name is mandatory. ';
         }
 
-        if(insName && insName!=='') {
+        if(insName !== undefined && insName!=='') {
             errorMsg += checkInstanceNameValidation(insName);
         }
 
@@ -46,13 +46,15 @@ export async function validateInstance(instance: any) {
 
 function checkInstanceId(insID: number): string {
     let errorMsg = '';
-
-    if(!isValidId9Digit(insID)){
-        errorMsg += 'Instance Id cannot be more than 9 digit. ';
-    }
     if(isValidIdExpo(insID)){
-        errorMsg += 'Instance Id cannot be in Exponential form. ';
+        errorMsg = 'Instance Id cannot be in Exponential form. ';
+        return errorMsg;
     }
+    if(!isValidId10Digit(insID)){
+        errorMsg = 'Instance Id cannot be more than 10 digit or in decimal. ';
+        return errorMsg;
+    }
+    
 
     return errorMsg;
 }
@@ -61,7 +63,7 @@ function checkInstanceNameValidation(name: string): string {
     let errorMsg = '';
 
     if(passEmptyAndSpellCheck(name)) {
-        errorMsg += 'Instance Name Should not be empty or have tailing spaces. ';
+        errorMsg += 'Instance Name Should not be empty or have leading or trailing spaces. ';
     } else if(name.length > 255) {
         errorMsg += 'Instance Name size should not be greater than 255 characters. ';
     } else if(!isValidInstanceName(name)){
@@ -80,10 +82,10 @@ function checkInsDisplayNameValidation(insDisplay: string): string {
 
     if(insDisplay!==''){
         if(passEmptyAndSpellCheck(insDisplay)){
-            errorMsg += 'Instance Display Name Should not be empty or have tailing spaces. ';
+            return 'Instance Display Name Should not be empty or have tailing spaces. ';
         }
         if(insDisplay.length > 255){
-            errorMsg += 'Instance Display Name size should not be greater than 255 characters. ';
+            return 'Instance Display Name size should not be greater than 255 characters. ';
         }
         errorMsg += standardChecks(insDisplay, 'instanceDisplayName', REGEX_INVALID_DEVICE_DISPLAY_NAME);
     }
@@ -109,8 +111,6 @@ function checkInstancePropertiesValidation(properties: any): string {
             errorMsg += 'Instance Properties Value should not be null, empty or have trailing spaces. ';
         } else if(properties[prop].length > 24000){
             errorMsg += 'Instance Properties Value should not be greater than 24000 characters. ';
-        } else if(!isValidInstanceName(properties[prop])){
-            errorMsg += 'Invalid Instance Properties Value ' + properties[prop] + ' . ';
         }
     }
 

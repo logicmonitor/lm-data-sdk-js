@@ -3,8 +3,9 @@ import {validateDatasource} from './DataSourceValidator';
 import {validateInstance} from './InstanceValidator';
 import {validateResource} from './ResourceValidator'
 
-const REGEX_ID_9_DIGIT = /^[0-9]{0,9}$/;
-const REGEX_ID_EXPO = /^e\\^\\-?\\d*?$/;
+const REGEX_ID_9_DIGIT = /^[0-9]{1,9}$/;
+const REGEX_ID_10_DIGIT = /^[0-9]{1,10}$/;
+const REGEX_ID_EXPO = /^([-+]?\d*\.?\d+)(?:[eE]([-+]?\d+))+$/;
 
 export async function validate(resourceInput: any, dataSourceInput: any, instanceInput: any, dataPointInput: any){
     let errorMsg = '';
@@ -27,6 +28,10 @@ export function isValidId9Digit(id: number): boolean {
     return REGEX_ID_9_DIGIT.test(id.toString());
 }
 
+export function isValidId10Digit(id: number): boolean {
+    return REGEX_ID_10_DIGIT.test(id.toString());
+}
+
 export function isValidIdExpo(id: number): boolean {
     return REGEX_ID_EXPO.test(id.toString());
 }
@@ -41,7 +46,9 @@ export function standardChecks(value: string, fieldName: string, regex: RegExp):
     if(/^\s|\s$/.test(value)){
         return fieldName + ' cannot have leading or trailing spaces. ';
     }
-
+    if(regex.test(value)){
+        return 'Invalid ' + fieldName + ' : ' + value + ' ';
+    }
     if(value.includes(testStr)){
         return 'Invalid ' + fieldName + ' : ' + value + ' ';
     }
