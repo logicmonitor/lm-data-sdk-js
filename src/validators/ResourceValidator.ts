@@ -2,20 +2,20 @@ import {
     passEmptyAndSpellCheck
 } from './Validator'
 
-const VALID_REGEX_RESOURCE_NAME = /^[a-z:A-Z0-9\\._\\-]+$/;
+const VALID_REGEX_RESOURCE_NAME = /^[a-z:A-Z0-9._\-]+$/;
 
 export async function validateResource(resource: any) {
     let errorMsg = ''
 
     if(resource!==undefined){
-        if(resource.resourceName && resource.resourceName !== ''){
+        if(resource.resourceName !== undefined && (resource.create || resource.resourceName !== '')){
             errorMsg += checkResourceNameValidation(resource.create, resource.resourceName);
         }
-        if(resource.description && resource.description !==''){
+        if(resource.description !== undefined && resource.description !==''){
             errorMsg += checkResourceDescriptionValidation(resource.description);
         }
         errorMsg += checkResourceIDValidation(resource.resourceIds);
-        if(resource.resourceProperties){
+        if(resource.resourceProperties !== undefined){
             errorMsg += checkResourcePropertiesValidation(resource.resourceProperties);
         }
     } else {
