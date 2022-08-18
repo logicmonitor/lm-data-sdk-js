@@ -7,17 +7,21 @@ export class Metrics{
     public company:string;
     public accessID:string;
     public accessKey:string;
+    private requestCount: number;
+    private rateLimitInitTime!: number;
+    private readonly oneMinute: number = 60000;
     private readonly resourcePath = "/v2/metric/ingest";
     private readonly url: string;
     private readonly batch: boolean;
     private readonly interval: number;
+    private readonly rateLimitPerMinute: number;
     private readonly mutex:MutexInterface;
 
     private metricBatch = [] as any;
     ticker: () => void;
     tickerID: NodeJS.Timer | null;
 
-    constructor(batch = false, interval = 1) {
+    constructor(batch = false, interval = 1, rateLimitPerMinute = 100) {
         this.company = process.env.LM_COMPANY!;
         this.accessID = process.env.LM_ACCESS_ID!;
         this.accessKey = process.env.LM_ACCESS_KEY!;
@@ -30,6 +34,8 @@ export class Metrics{
 
         this.batch = batch;
         this.interval = interval;
+        this.rateLimitPerMinute = rateLimitPerMinute;
+        this.requestCount = 0;
         this.tickerID = null;
         this.ticker = () => {
             this.tickerID = setInterval(() => {
@@ -126,6 +132,15 @@ export class Metrics{
         }
         console.log("Body: ", body)
         
+        //check rate limit
+        if(this.requestCount === 0 || Date.now() - this.rateLimitInitTime > this.oneMinute){
+            this.requestCount = 1;
+            this.rateLimitInitTime = Date.now();
+        } else if(Date.now() - this.rateLimitInitTime <= this.oneMinute && this.requestCount > this.rateLimitPerMinute){
+            throw new Error('The number of requests exceeds the rate limit');
+        } else{
+            this.requestCount += 1;
+        }
 
         const response = await makeRequest('POST', this.url, this.resourcePath, body, this.accessID, this.accessKey);
         console.log("Response: ", await response.json())
