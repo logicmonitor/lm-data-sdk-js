@@ -27,12 +27,12 @@
     },
     "include": [
         "src/**/*.ts",
-        "tests/**/*.ts",
         "./package.json",
         "./CHANGELOG.md",
         "./RELEASE_NOTES.md"
     ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "tests/**/*.ts",
       ]
 }
