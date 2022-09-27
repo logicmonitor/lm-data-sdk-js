@@ -1,44 +1,29 @@
 import {Mutex, MutexInterface} from 'async-mutex';
 import makeRequest from '../../utils/MakeRequest'
-
+import Config from '../../config';
 
 export class Log {
-    public company:string;
-    public accessID:string;
-    public accessKey:string;
+    private readonly config: Config;
     private requestCount: number;
     private rateLimitInitTime!: number;
     private readonly oneMinute: number = 60000;
     readonly resourcePath = "/log/ingest";
-    readonly url:string;
-    readonly batch:boolean;
-    readonly interval:number;
-    private readonly rateLimitPerMinute: number;
     readonly mutex:MutexInterface;
+
     private logBatch = [] as any;
     ticker: () => void;
     tickerID: NodeJS.Timer | null;
 
-    constructor(batch = false, interval = 10, rateLimitPerMinute = 100) {
-        this.company = process.env.LM_COMPANY!;
-        this.accessID = process.env.LM_ACCESS_ID!;
-        this.accessKey = process.env.LM_ACCESS_KEY!;
-        this.url = `https://${this.company}.logicmonitor.com/rest`;
+    constructor(options: any) {
+     
+        this.config = new Config(options, 'logs')
 
-        // if batch is true interval should not be 0
-        if(batch && interval == 0) {
-            throw new Error('Interval must be greater than 0 when batching is enabled');
-        }
-
-        this.batch = batch;
-        this.interval = interval;
-        this.rateLimitPerMinute = rateLimitPerMinute;
         this.requestCount = 0;
         this.tickerID = null;
         this.ticker = () => {
             this.tickerID = setInterval(() => {
                 this.sendLogs();
-            }, this.interval * 1000);
+            }, this.config.interval * 1000);
         }
 
         this.mutex = new Mutex();
@@ -51,7 +36,7 @@ export class Log {
             '_lm.resourceId': resourceIdMap,
             ...metaData
         }
-        if(this.batch) {
+        if(this.config.batch) {
             this.addRequestToBatch(log);
         } else {
             this.logBatch.push(log);
@@ -62,7 +47,7 @@ export class Log {
 
     private async sendLogs() {
 
-        if(this.batch && this.logBatch.length == 0) {
+        if(this.config.batch && this.logBatch.length == 0) {
             if(this.tickerID) {
                 clearInterval(this.tickerID);
                 this.tickerID = null;
@@ -83,12 +68,20 @@ export class Log {
           if(this.requestCount === 0 || Date.now() - this.rateLimitInitTime > this.oneMinute){
             this.requestCount = 1;
             this.rateLimitInitTime = Date.now();
-        } else if(Date.now() - this.rateLimitInitTime <= this.oneMinute && this.requestCount > this.rateLimitPerMinute){
+        } else if(Date.now() - this.rateLimitInitTime <= this.oneMinute && this.requestCount > this.config.rateLimitPerMinute){
             throw new Error('The number of requests exceeds the rate limit');
         } else{
             this.requestCount += 1;
         }
-        const response = await makeRequest('POST', this.url, this.resourcePath, body, this.accessID, this.accessKey);
+        const response = await makeRequest({
+            method: 'POST',
+            url: this.config.url,
+            resourcePath: this.resourcePath,
+            body: body,
+            accessId: this.config.accessID,
+            accessKey: this.config.accessKey,
+            gzip: this.config.gzip
+        });
 
         console.log("Response: ", response);
 

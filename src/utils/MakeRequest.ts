@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const fs = require('fs').promises;
 var crypto = require('crypto');
 import { gzip } from 'node-gzip';
 
@@ -16,21 +17,39 @@ function getLmV1Token(method: string, body: string, resourcePath: string, access
 
     return 'LMv1 ' + accessID + ':' + signature + ':' + timeStamp;
 }
+async function buildUserAgent(){
+    const json = await fs.readFile("../../package.json");
+    const userAgent = json.name + '/' + json.version + ';' + 'node:' + process.version + ';' + process.platform + ';' + process.arch + ';';
+    return userAgent;
+}
+async function makeRequest(options: any) {
+    let authToken;
+    let payload = options.body;
+    let _encoding : any= {};
 
-async function makeRequest(method: string, url: string, resourcePath:string, body: string, accessId: string, accessKey: string) {
-
-    const compressedBody = await gzip(body);
-    const lmV1Token = getLmV1Token(method, body, resourcePath, accessId, accessKey)
-    console.log("LMV1 Token: " + lmV1Token);
-    const _url = url + resourcePath;
+    if(options.gzip){
+        _encoding['Content-Encoding'] = 'gzip';
+        const compressedBody = await gzip(options.body);
+        payload = compressedBody
+    }
+    
+    if(options.resourcePath.includes('metric') && options.bearerToken != ''){
+        authToken = 'Bearer ' + options.bearerToken;
+    } else {
+        authToken = getLmV1Token(options.method, options.body, options.resourcePath, options.accessId, options.accessKey)
+    }
+    
+    const _url = options.url + options.resourcePath;
+    const userAgent = await buildUserAgent()
     const response = await fetch(_url, {
-        method: method,
+        method: options.method,
         headers: {
             'Content-Type': 'application/json',
-            'Content-Encoding': 'gzip',
-            'Authorization': lmV1Token,
+            'Authorization': authToken,
+            'User-Agent': userAgent,
+            ..._encoding
         },
-        body: compressedBody
+        body: payload
     });
     
     return response;

@@ -1,46 +1,31 @@
 import {Mutex, MutexInterface} from 'async-mutex';
 var hash = require('object-hash');
 import makeRequest from '../../utils/MakeRequest'
+import Config from '../../config';
 import {validate} from '../../validators/Validator';
 
 export class Metrics{
-    public company:string;
-    public accessID:string;
-    public accessKey:string;
+    private readonly config: Config;
     private requestCount: number;
     private rateLimitInitTime!: number;
     private readonly oneMinute: number = 60000;
     private readonly resourcePath = "/v2/metric/ingest";
-    private readonly url: string;
-    private readonly batch: boolean;
-    private readonly interval: number;
-    private readonly rateLimitPerMinute: number;
     private readonly mutex:MutexInterface;
 
     private metricBatch = [] as any;
     ticker: () => void;
     tickerID: NodeJS.Timer | null;
 
-    constructor(batch = false, interval = 1, rateLimitPerMinute = 100) {
-        this.company = process.env.LM_COMPANY!;
-        this.accessID = process.env.LM_ACCESS_ID!;
-        this.accessKey = process.env.LM_ACCESS_KEY!;
-        this.url = `https://${this.company}.logicmonitor.com/rest`;
+    constructor(options: any) {
+        
+        this.config = new Config(options, 'metrics')
 
-        // if batch is true interval should not be 0
-        if(batch && interval == 0) {
-            throw new Error('Interval must be greater than 0 when batching is enabled');
-        }
-
-        this.batch = batch;
-        this.interval = interval;
-        this.rateLimitPerMinute = rateLimitPerMinute;
         this.requestCount = 0;
         this.tickerID = null;
         this.ticker = () => {
             this.tickerID = setInterval(() => {
                 this.exportData();
-            }, this.interval * 1000);
+            }, this.config.interval * 1000);
         }
 
         this.mutex = new Mutex();
@@ -59,11 +44,9 @@ export class Metrics{
 
         let input = await this.createSingleMetricPayload(resourceInput, dataSourceInput, instanceInput, dataPointInput);
         
-        console.log("Payload: ", JSON.stringify(input));
 
         
-        if(this.batch) {
-            // console.log("Implement this.addRequestToBatch(log);");
+        if(this.config.batch) {
             this.addRequestToBatch(input);
         } else {
             this.metricBatch.push(input);
@@ -73,7 +56,6 @@ export class Metrics{
     }
 
     private async createSingleMetricPayload(resourceInput: any, dataSourceInput: any, instanceInput: any, dataPointInput: any) {
-        console.log("Creating payload");
 
         let instance = {
             ...instanceInput
@@ -105,7 +87,7 @@ export class Metrics{
 
     private async exportData() {
 
-        if(this.batch && this.metricBatch.length == 0) {
+        if(this.config.batch && this.metricBatch.length == 0) {
             if(this.tickerID) {
                 clearInterval(this.tickerID);
                 this.tickerID = null;
@@ -115,7 +97,7 @@ export class Metrics{
 
         let body = "";
         let localMetricBatch;
-        if(this.batch) {
+        if(this.config.batch) {
             const release = await this.mutex.acquire();
             try{
                 localMetricBatch = this.metricBatch
@@ -130,19 +112,28 @@ export class Metrics{
             body = JSON.stringify(localMetricBatch);
             this.metricBatch = [];
         }
-        console.log("Body: ", body)
+        
         
         //check rate limit
         if(this.requestCount === 0 || Date.now() - this.rateLimitInitTime > this.oneMinute){
             this.requestCount = 1;
             this.rateLimitInitTime = Date.now();
-        } else if(Date.now() - this.rateLimitInitTime <= this.oneMinute && this.requestCount > this.rateLimitPerMinute){
+        } else if(Date.now() - this.rateLimitInitTime <= this.oneMinute && this.requestCount > this.config.rateLimitPerMinute){
             throw new Error('The number of requests exceeds the rate limit');
         } else{
             this.requestCount += 1;
         }
 
-        const response = await makeRequest('POST', this.url, this.resourcePath, body, this.accessID, this.accessKey);
+        const response = await makeRequest({
+            method: 'POST',
+            url: this.config.url,
+            resourcePath: this.resourcePath,
+            body: body,
+            accessId: this.config.accessID,
+            accessKey: this.config.accessKey,
+            bearerToken: this.config.bearerToken,
+            gzip: this.config.gzip
+        });
         console.log("Response: ", await response.json())
 
 

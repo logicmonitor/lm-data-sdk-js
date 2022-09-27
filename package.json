@@ -1,15 +1,16 @@
 {
-  "name": "lm-data-sdk-js",
+  "name": "@logicmonitor/lm-data-sdk-js",
   "version": "0.0.1",
   "description": "LM Data SDK",
-  "main": "index.js",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "scripts": {
     "build": "tsc --build --force",
     "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@stash.logicmonitor.com:7999/~anupam.dalmia_logicmonitor.com/js-data-sdk.git"
+    "url": "git@github.com:logicmonitor/lm-data-sdk-js.git"
   },
   "author": "",
   "license": "ISC",
@@ -43,5 +44,15 @@
     "node-fetch": "^2.6.1",
     "node-gzip": "^1.1.2",
     "object-hash": "^3.0.0"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   }
 }
