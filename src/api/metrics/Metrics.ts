@@ -2,6 +2,8 @@ import {Mutex, MutexInterface} from 'async-mutex';
 var hash = require('object-hash');
 import makeRequest from '../../utils/MakeRequest'
 import Config from '../../config';
+import {validate} from '../../validators/Validator';
+
 export class Metrics{
     private readonly config: Config;
     private requestCount: number;
@@ -33,6 +35,13 @@ export class Metrics{
 
 
         //validate the inputs here
+        let errorMsg = await validate(resourceInput, dataSourceInput, instanceInput, dataPointInput);
+        if(errorMsg != ''){
+            console.log("Validation failed");
+            throw new Error('Validation failed: '+ errorMsg)
+        }
+
+
         let input = await this.createSingleMetricPayload(resourceInput, dataSourceInput, instanceInput, dataPointInput);
         
 
