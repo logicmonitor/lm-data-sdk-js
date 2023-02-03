@@ -1,5 +1,5 @@
 {
-  "name": "@logicmonitor/lm-data-sdk-js",
+  "name": "@logicmonitor-official/lm-data-sdk-js",
   "version": "0.0.1",
   "description": "LM Data SDK",
   "main": "build/src/index.js",

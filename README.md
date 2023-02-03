@@ -22,6 +22,106 @@ All properties can be set using environment variable.
 |   LM_ACCESS_KEY      |	Access key while using LMv1 authentication.|
 |   LM_BEARER_TOKEN    |	BearerToken while using Bearer authentication.|
 
+### Batching
+
+By default, batching is disabled.
+If enabled, the default batch time is 10s.
+### Logs
+
+    import {Log} from  '@logicmonitor-official/lm-data-sdk-js';
+    let log =  new  Log(true, 10); // Instantiate Logger with barching enabled and batching interval 10s
+    log.SendLogs(
+	    'Log Message',
+	    {
+	        'system.displayname' : 'example-currency-service',
+	    }
+	)
+
+### Metrics
+
+    import {Metrics} from '@logicmonitor-official/lm-data-sdk-js';
+    //instantiate Metrics with batching enabled and bathing time set to 10s
+    let metric = new Metrics(true, 10);
+
+    // Build the Resource
+    let resource = new ResourceBuilder()
+                .setResourceName('LmExporterSDKTest_71799')
+                .setResourceIds({
+                    'system.displayname': 'LmExporterSDKTest_71799'
+                })
+                .build();
+    // Build DataSource
+    let dS1 = new DataSourceBuilder()
+                        .setDataSource('JsSDK')
+                        .setDataSourceDisplayName('JsSDK')
+                        .setDataSourceGroup('Sdk')
+                        .build();
+    
+    // Build Second DataSource
+    let dS2 = new DataSourceBuilder()
+        .setDataSource('MetricJsSDK')
+        .setDataSourceDisplayName('MetricJsSDK')
+        .setDataSourceGroup('Sdk')
+        .build();
+
+    // Build Instance
+    let i1 = new InstanceBuilder()
+                .setInstanceName('DataSDK')
+                .setInstanceDisplayName('DataSDK')
+                .setInstanceProperties(
+                    {
+                        'test': 'dataSDK'
+                    }
+                )
+                .build();
+    
+    //Build second Instance
+    let i2 = new InstanceBuilder()
+    .setInstanceName('MetricDataSDK')
+    .setInstanceDisplayName('MetricDataSDK')
+    .setInstanceProperties(
+    {
+        'test': 'dataSDK'
+    }
+    )
+    .build();
+            
+    // Build DataPoint
+    let dP1 = new DataPointBuilder()
+                    .setDataPointName('cpu')
+                    .setDataPointDescription('cpu')
+                    .setDataPointAggregationType('SUM')
+                    .setDataPointType('COUNTER')
+                    .build();
+
+    dP1.setValue(
+        Math.floor(Date.now()/1000).toString(),
+        '79'
+    )
+
+    //Build second DataPoint
+    let dP2 = new DataPointBuilder()
+                    .setDataPointName('mem')
+                    .setDataPointDescription('mem')
+                    .setDataPointAggregationType('SUM')
+                    .setDataPointType('COUNTER')
+                    .build();
+
+    dP2.setValue(
+        Math.floor(Date.now()/1000).toString(),
+        '100'
+    )
+
+    // Send metrics in various combinations.
+    metric.SendMetrics(resource,dS1,i1,dP1)
+    metric.SendMetrics(resource,dS1,i1,dP2)
+    metric.SendMetrics(resource,dS1,i2,dP1)
+    metric.SendMetrics(resource,dS1,i2,dP2)
+
+    metric.SendMetrics(resource,dS2,i1,dP1)
+    metric.SendMetrics(resource,dS2,i1,dP2)
+    metric.SendMetrics(resource,dS2,i2,dP1)
+    metric.SendMetrics(resource,dS2,i2,dP2)
 
 Copyright, 2022, LogicMonitor, Inc.
 
