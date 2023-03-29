@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@types/node": "^17.0.35",
-    "async-mutex": "^0.3.2",
+    "async-mutex": "^0.4.0",
     "node-fetch": "^2.6.1",
     "node-gzip": "^1.1.2",
     "object-hash": "^3.0.0"
